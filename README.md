@@ -1,3 +1,13 @@
+---
+title: Collections Copilot
+emoji: 📨
+colorFrom: blue
+colorTo: gray
+sdk: docker
+app_port: 8501
+pinned: false
+---
+
 # Collections Copilot
 
 A small demo AI agent for a debt-collection team. For one overdue account it
@@ -143,6 +153,20 @@ provider package and add its credentials to `.env`. `build_chat_model()` in
 and `azure_openai` (`langchain-openai`). Only the Groq branch has been run.
 `llm_extra_kwargs` in the config holds Groq-specific options and should be
 cleared for other providers.
+
+## Deploying to Hugging Face Spaces
+
+The block at the top of this README configures a Docker Space: Spaces builds the
+`Dockerfile` and serves the UI on port 8501. The API runs inside the same
+container and is not exposed.
+
+1. Create a Space with the **Docker** SDK and push this repository to it.
+2. In the Space's **Settings > Variables and secrets**, add secrets
+   `GROQ_API_KEY` and `APP_PASSWORD`, and a variable `DEMO_MODE=false`.
+
+`APP_PASSWORD` puts a shared-password screen in front of the UI so strangers
+cannot spend the Groq quota. Leave it unset locally. Storage on a free Space is
+ephemeral: the audit log and runs reset when the Space restarts.
 
 ## Limitations and next steps
 

@@ -1,6 +1,7 @@
 """Streamlit UI for Collections Copilot. Talks to the FastAPI service only."""
 from __future__ import annotations
 
+import hmac
 import html
 import json
 import os
@@ -10,6 +11,7 @@ import httpx
 import streamlit as st
 
 API_URL = os.getenv("API_URL", "http://127.0.0.1:8000").rstrip("/")
+APP_PASSWORD = os.getenv("APP_PASSWORD", "")  # set on public deployments; empty = no gate
 STEP_ICONS = {"ok": "✅", "waiting": "⏸️", "error": "❌"}
 STATUS_LABELS = {
     "running": "🔄 Running",
@@ -224,9 +226,25 @@ def audit_tab() -> None:
             right.json(entry["output"], expanded=1)
 
 
+def require_password() -> None:
+    """Shared-password gate for public deployments. Does nothing when APP_PASSWORD is unset."""
+    if not APP_PASSWORD or st.session_state.get("authenticated"):
+        return
+    with st.form("login"):
+        entered = st.text_input("Password", type="password")
+        submitted = st.form_submit_button("Enter")
+    if submitted:
+        if hmac.compare_digest(entered.encode(), APP_PASSWORD.encode()):
+            st.session_state["authenticated"] = True
+            st.rerun()
+        st.error("Wrong password.")
+    st.stop()
+
+
 def main() -> None:
     st.title("📨 Collections Copilot")
     st.caption("Demo agent for a collections team · synthetic data only · sending is mocked")
+    require_password()
 
     health, error = api("GET", "/health")
     if error:
