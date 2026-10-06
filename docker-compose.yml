@@ -1,0 +1,35 @@
+# One command: docker compose up --build
+# UI: http://localhost:8501   API docs: http://localhost:8000/docs
+services:
+  api:
+    build: .
+    image: collections-copilot
+    command: uvicorn copilot.api:app --host 0.0.0.0 --port 8000
+    env_file:
+      - path: .env        # GROQ_API_KEY and DEMO_MODE; never baked into the image
+        required: false
+    ports:
+      - "8000:8000"
+    volumes:
+      - copilot-var:/app/var   # SQLite: runs, audit log, mock outbox, checkpoints
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  ui:
+    image: collections-copilot
+    command: >
+      streamlit run ui/app.py --server.port 8501 --server.address 0.0.0.0
+      --server.headless true --browser.gatherUsageStats false
+    environment:
+      API_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  copilot-var:

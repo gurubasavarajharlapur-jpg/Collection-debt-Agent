@@ -51,7 +51,7 @@ class Settings:
     policy_path: Path = ROOT / "data" / "policy.md"
     var_dir: Path = Path(os.getenv("COPILOT_VAR_DIR", str(ROOT / "var")))
 
-    api_url: str = os.getenv("API_URL", "http://localhost:8000")
+    api_url: str = os.getenv("API_URL", "http://127.0.0.1:8000")
 
     @property
     def db_path(self) -> Path:
