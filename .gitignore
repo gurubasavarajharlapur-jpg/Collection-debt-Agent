@@ -1,0 +1,21 @@
+# Secrets - never commit
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.bootstrap/
+.pytest_cache/
+*.egg-info/
+
+# Runtime state (SQLite databases, FAISS index cache)
+var/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

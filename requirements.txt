@@ -1,0 +1,12 @@
+langgraph
+langgraph-checkpoint-sqlite
+langchain
+langchain-groq
+fastapi
+uvicorn[standard]
+streamlit
+faiss-cpu
+sentence-transformers
+python-dotenv
+httpx
+pytest
