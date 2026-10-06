@@ -10,9 +10,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN useradd --create-home --uid 1000 user
 WORKDIR /app
 
-# CPU-only torch keeps the image small (no CUDA libraries).
+# requirements.txt points pip at the CPU-only torch wheels (no CUDA libraries).
 COPY requirements.txt .
-RUN pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt
+RUN pip install -r requirements.txt
 
 # Bake the embedding model into the image so the app runs with no internet.
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')"

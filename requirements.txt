@@ -1,3 +1,6 @@
+# CPU-only torch: keeps installs small on hosts without a GPU.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 # Developed against the versions noted; lower bounds keep the APIs used here available.
 langgraph>=1.0              # 1.2
 langgraph-checkpoint-sqlite>=3.0

@@ -5,13 +5,33 @@ import hmac
 import html
 import json
 import os
+import sys
+import tempfile
+import threading
 import time
+from pathlib import Path
 
 import httpx
 import streamlit as st
 
+SECRET_NAMES = ("GROQ_API_KEY", "DEMO_MODE", "APP_PASSWORD", "EMBEDDED_API", "RAG_BACKEND",
+                "LLM_PROVIDER", "LLM_MODEL")
+
+
+def load_host_secrets() -> None:
+    """Copy secrets set in a hosting dashboard (e.g. Streamlit Community Cloud) into the environment."""
+    try:
+        for name in SECRET_NAMES:
+            if name in st.secrets:
+                os.environ.setdefault(name, str(st.secrets[name]))
+    except Exception:  # no secrets file: normal for local runs
+        pass
+
+
+load_host_secrets()
 API_URL = os.getenv("API_URL", "http://127.0.0.1:8000").rstrip("/")
 APP_PASSWORD = os.getenv("APP_PASSWORD", "")  # set on public deployments; empty = no gate
+EMBEDDED_API = os.getenv("EMBEDDED_API", "").strip().lower() in {"1", "true", "yes", "on"}
 STEP_ICONS = {"ok": "✅", "waiting": "⏸️", "error": "❌"}
 STATUS_LABELS = {
     "running": "🔄 Running",
@@ -241,10 +261,32 @@ def require_password() -> None:
     st.stop()
 
 
+@st.cache_resource(show_spinner="Starting the agent service…")
+def start_embedded_api() -> bool:
+    """Single-process hosting (EMBEDDED_API=true): run the FastAPI app in a background thread.
+
+    Used where only one Streamlit process is allowed, such as Streamlit Community Cloud.
+    """
+    import uvicorn
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    os.environ.setdefault("COPILOT_VAR_DIR", str(Path(tempfile.gettempdir()) / "copilot-var"))
+    from copilot.api import app
+
+    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=8000, log_level="warning"))
+    threading.Thread(target=server.run, daemon=True, name="embedded-api").start()
+    deadline = time.time() + 60
+    while not server.started and time.time() < deadline:
+        time.sleep(0.2)
+    return server.started
+
+
 def main() -> None:
     st.title("📨 Collections Copilot")
     st.caption("Demo agent for a collections team · synthetic data only · sending is mocked")
     require_password()
+    if EMBEDDED_API:
+        start_embedded_api()
 
     health, error = api("GET", "/health")
     if error:

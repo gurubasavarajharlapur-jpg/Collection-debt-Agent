@@ -154,19 +154,38 @@ and `azure_openai` (`langchain-openai`). Only the Groq branch has been run.
 `llm_extra_kwargs` in the config holds Groq-specific options and should be
 cleared for other providers.
 
-## Deploying to Hugging Face Spaces
+## Deploying
 
-The block at the top of this README configures a Docker Space: Spaces builds the
-`Dockerfile` and serves the UI on port 8501. The API runs inside the same
-container and is not exposed.
+A public deployment should always set `APP_PASSWORD`, which puts a shared-password
+screen in front of the UI so strangers cannot spend the Groq quota. Secrets go in
+the host's secrets page, never in the repository. Storage on free hosts is
+ephemeral: runs and the audit log reset when the app restarts.
 
-1. Create a Space with the **Docker** SDK and push this repository to it.
-2. In the Space's **Settings > Variables and secrets**, add secrets
-   `GROQ_API_KEY` and `APP_PASSWORD`, and a variable `DEMO_MODE=false`.
+### Streamlit Community Cloud (free, deploys from GitHub)
 
-`APP_PASSWORD` puts a shared-password screen in front of the UI so strangers
-cannot spend the Groq quota. Leave it unset locally. Storage on a free Space is
-ephemeral: the audit log and runs reset when the Space restarts.
+Community Cloud runs a single Streamlit process, so `EMBEDDED_API=true` makes the
+UI start the FastAPI service in a background thread of the same process.
+
+1. At <https://share.streamlit.io> choose **Create app**, pick this repository,
+   branch `main`, main file `ui/app.py`, and Python 3.11 under advanced settings.
+2. Paste into **Secrets**:
+
+   ```toml
+   GROQ_API_KEY = "your-groq-api-key"
+   APP_PASSWORD = "choose-a-password"
+   DEMO_MODE = "false"
+   EMBEDDED_API = "true"
+   ```
+
+If the app runs out of memory loading the embedding model, add
+`RAG_BACKEND = "keyword"` to use the lightweight retriever.
+
+### Hugging Face Spaces (Docker)
+
+The block at the top of this README configures a Docker Space serving the UI on
+port 8501. Push the repository to the Space and add secrets `GROQ_API_KEY` and
+`APP_PASSWORD` plus variable `DEMO_MODE=false` under **Settings > Variables and
+secrets**.
 
 ## Limitations and next steps
 
